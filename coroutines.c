@@ -13,10 +13,11 @@ coroutine(ucontext_t *main2, ucontext_t *me, int j) {
 	}
 }
 
-void
+int
 make_and_run_coroutines(void) {
 	ucontext_t main, main2;
 	int *f;
+	void *stack;
 
     // Flag indicating that the iterator has completed.
     int finished = 0;
@@ -24,10 +25,14 @@ make_and_run_coroutines(void) {
 	for (int j = 0; j < MAX_COROUTINES; j++) {
 	    getcontext(&coroutines[j]);
 
+	    if ((stack = malloc(SIGSTKSZ)) == NULL) {
+	    	return 1;
+	    }
+
 	    /* Initialise the iterator context. uc_link points to main, the
 	     * point to return to when the iterator finishes. */
 	    coroutines[j].uc_link          = &main;
-	    coroutines[j].uc_stack.ss_sp   = malloc(SIGSTKSZ);
+	    coroutines[j].uc_stack.ss_sp   = stack;
 	    coroutines[j].uc_stack.ss_size = SIGSTKSZ;
 
 	    /* Fill in the coroutine context, this will make it start at the
@@ -47,11 +52,11 @@ make_and_run_coroutines(void) {
 			}
 		}
 	}
+
+	return 0;
 }
 
 int
 main(int argc, const char **argv) {
-	make_and_run_coroutines();
-
-	return 0;
+	return make_and_run_coroutines();
 }
