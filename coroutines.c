@@ -1,58 +1,50 @@
-#include <setjmp.h>
+#include <stdlib.h>
 #include <stdio.h>
+#include <ucontext.h>
 
-struct jmp_pts {
-	jmp_buf env;
-	jmp_buf home;
-	int exited;
-};
-
-#define MAX_COROUTINES 5
-static struct jmp_pts coroutines[MAX_COROUTINES];
-static int counts[MAX_COROUTINES];
+#define MAX_COROUTINES 4
+static ucontext_t coroutines[MAX_COROUTINES];
 
 void
-coroutine(const int i) {
-	int j;
-	for (;;) {
-		if (j = setjmp(coroutines[i].env)) {
-			j--;
-			printf("coroutine %d says %d\n", j, counts[j]);
-			counts[j]++;
-			if (counts[j] > 100) {
-				longjmp(coroutines[j].home, 2);
-			}
-		}
-
-		longjmp(coroutines[j].home, 1);
+coroutine(ucontext_t *main2, ucontext_t *me, int j) {
+	for (int i = 0; i < 100; i++) {
+		printf("coroutine %d says %d\n", j, i);
+		swapcontext(me, main2);
 	}
 }
 
 void
 make_and_run_coroutines(void) {
-	jmp_buf home;
-	int ret;
+	ucontext_t main, main2;
+	int *f;
 
-	for (int i = 0; i < MAX_COROUTINES; i++) {
-		coroutines[i].exited = 0;
-		if (setjmp(coroutines[i].home)) {
-			continue;
-		}
+    // Flag indicating that the iterator has completed.
+    int finished = 0;
 
-		coroutine(i);
+	for (int j = 0; j < MAX_COROUTINES; j++) {
+	    getcontext(&coroutines[j]);
+
+	    /* Initialise the iterator context. uc_link points to main, the
+	     * point to return to when the iterator finishes. */
+	    coroutines[j].uc_link          = &main;
+	    coroutines[j].uc_stack.ss_sp   = malloc(SIGSTKSZ);
+	    coroutines[j].uc_stack.ss_size = SIGSTKSZ;
+
+	    /* Fill in the coroutine context, this will make it start at the
+	     * coroutine function with it's own stack. */
+	    makecontext(&coroutines[j], (void (*)(void)) coroutine,
+	    	        3, &main2, &coroutines[j], j);
 	}
 
-	for (int i = 0; i < 100; i++) {
-		for (int j = 0; j < MAX_COROUTINES; j++) {
-			if (coroutines[j].exited == 1) continue;
-			if (ret = setjmp(coroutines[j].home)) {
-				if (ret == 2) {
-					coroutines[j].exited = 1;
-				}
-				continue;
-			}
+	// Set main context here for when our coroutines return.
+	getcontext(&main);
 
-			longjmp(coroutines[j].env, j+1);
+    if (!finished) {
+    	finished = 1;
+		for (int i = 0; i < 100; i++) {
+			for (int j = 0; j < MAX_COROUTINES; j++) {
+				swapcontext(&main2, &coroutines[j]);
+			}
 		}
 	}
 }
