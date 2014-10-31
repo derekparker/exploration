@@ -18,7 +18,7 @@ make_and_run_coroutines(void) {
 	void *stack;
 	ucontext_t main, main2;
 	const int STACK_SIZE = 4096;
-    int finished = 0; // Flag indicating that the iterator has completed.
+    int finished = 0;
 
 	for (int j = 0; j < MAX_COROUTINES; j++) {
 	    getcontext(&coroutines[j]);
