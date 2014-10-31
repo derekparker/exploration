@@ -15,17 +15,15 @@ coroutine(ucontext_t *main2, ucontext_t *me, int j) {
 
 int
 make_and_run_coroutines(void) {
-	ucontext_t main, main2;
-	int *f;
 	void *stack;
-
-    // Flag indicating that the iterator has completed.
-    int finished = 0;
+	ucontext_t main, main2;
+	const int STACK_SIZE = 4096;
+    int finished = 0; // Flag indicating that the iterator has completed.
 
 	for (int j = 0; j < MAX_COROUTINES; j++) {
 	    getcontext(&coroutines[j]);
 
-	    if ((stack = malloc(SIGSTKSZ)) == NULL) {
+	    if ((stack = malloc(STACK_SIZE)) == NULL) {
 	    	return 1;
 	    }
 
@@ -33,7 +31,7 @@ make_and_run_coroutines(void) {
 	     * point to return to when the iterator finishes. */
 	    coroutines[j].uc_link          = &main;
 	    coroutines[j].uc_stack.ss_sp   = stack;
-	    coroutines[j].uc_stack.ss_size = SIGSTKSZ;
+	    coroutines[j].uc_stack.ss_size = STACK_SIZE;
 
 	    /* Fill in the coroutine context, this will make it start at the
 	     * coroutine function with it's own stack. */
