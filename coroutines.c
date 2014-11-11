@@ -46,10 +46,10 @@ make_and_run_coroutines(void) {
     	finished = 1;
     	for (int i = 0; i < 100; i++) {
     		for (int j = 0; j < MAX_COROUTINES; j++) {
-				swapcontext(&main2, &coroutines[j]);
-			}
-		}
-	}
+    			swapcontext(&main2, &coroutines[j]);
+    		}
+    	}
+    }
 
 	return 0;
 }
