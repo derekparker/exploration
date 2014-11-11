@@ -18,7 +18,7 @@ make_and_run_coroutines(void) {
 	void *stack;
 	ucontext_t main, main2;
 	const int STACK_SIZE = 4096;
-    int finished = 0;
+	int finished = 0;
 
 	for (int j = 0; j < MAX_COROUTINES; j++) {
 	    getcontext(&coroutines[j]);
@@ -44,8 +44,8 @@ make_and_run_coroutines(void) {
 
     if (!finished) {
     	finished = 1;
-		for (int i = 0; i < 100; i++) {
-			for (int j = 0; j < MAX_COROUTINES; j++) {
+    	for (int i = 0; i < 100; i++) {
+    		for (int j = 0; j < MAX_COROUTINES; j++) {
 				swapcontext(&main2, &coroutines[j]);
 			}
 		}
