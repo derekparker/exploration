@@ -21,35 +21,35 @@ make_and_run_coroutines(void) {
 	int finished = 0;
 
 	for (int j = 0; j < MAX_COROUTINES; j++) {
-	    getcontext(&coroutines[j]);
+		getcontext(&coroutines[j]);
 
-	    if ((stack = malloc(STACK_SIZE)) == NULL) {
-	    	return 1;
-	    }
+		if ((stack = malloc(STACK_SIZE)) == NULL) {
+			return 1;
+		}
 
-	    /* Initialise the iterator context. uc_link points to main, the
-	     * point to return to when the iterator finishes. */
-	    coroutines[j].uc_link          = &main;
-	    coroutines[j].uc_stack.ss_sp   = stack;
-	    coroutines[j].uc_stack.ss_size = STACK_SIZE;
+		/* Initialise the iterator context. uc_link points to main, the
+		 * point to return to when the iterator finishes. */
+		coroutines[j].uc_link          = &main;
+		coroutines[j].uc_stack.ss_sp   = stack;
+		coroutines[j].uc_stack.ss_size = STACK_SIZE;
 
-	    /* Fill in the coroutine context, this will make it start at the
-	     * coroutine function with it's own stack. */
-	    makecontext(&coroutines[j], (void (*)(void)) coroutine,
-	    	        3, &main2, &coroutines[j], j);
+		/* Fill in the coroutine context, this will make it start at the
+		 * coroutine function with it's own stack. */
+		makecontext(&coroutines[j], (void (*)(void)) coroutine,
+					3, &main2, &coroutines[j], j);
 	}
 
 	// Set main context here for when our coroutines return.
 	getcontext(&main);
 
-    if (!finished) {
-    	finished = 1;
-    	for (int i = 0; i < 100; i++) {
-    		for (int j = 0; j < MAX_COROUTINES; j++) {
-    			swapcontext(&main2, &coroutines[j]);
-    		}
-    	}
-    }
+	if (!finished) {
+		finished = 1;
+		for (int i = 0; i < 100; i++) {
+			for (int j = 0; j < MAX_COROUTINES; j++) {
+				swapcontext(&main2, &coroutines[j]);
+			}
+		}
+	}
 
 	return 0;
 }
